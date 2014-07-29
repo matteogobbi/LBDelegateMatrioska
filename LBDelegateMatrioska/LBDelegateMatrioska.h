@@ -15,7 +15,7 @@
 /**
  *	The array of delegate objects that should all conform to a specific protocol.
  */
-@property (readonly, nonatomic, strong) NSArray *delegates;
+@property (strong, nonatomic, readonly) NSArray *delegates;
 
 /**
  *	Designated initializer.

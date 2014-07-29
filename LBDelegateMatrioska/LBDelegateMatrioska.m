@@ -13,6 +13,7 @@
 @interface LBDelegateMatrioska ()
 
 @property (nonatomic, strong) NSPointerArray *mutableDelegates;
+@property (nonatomic, weak) id firstResponder;
 
 @end
 
@@ -31,9 +32,23 @@
 
 - (void)addDelegate:(id)delegate
 {
-    NSPointerArray *copy = [self.mutableDelegates copy];
-    [copy addPointer:(void *)delegate];
-    self.mutableDelegates = copy;
+    NSParameterAssert(delegate);
+    
+    [self.mutableDelegates addPointer:(void *)delegate];
+}
+
+- (void)removeDelegate:(id)aDelegate
+{
+    NSParameterAssert(aDelegate);
+    
+    NSUInteger index = 0;
+    for (id delegate in self.delegates) {
+        if (delegate == aDelegate) {
+            [self.mutableDelegates removePointerAtIndex:index];
+            break;
+        }
+        index++;
+    }
 }
 
 - (NSArray *)delegates
@@ -54,7 +69,7 @@
 
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel
 {
-    id firstResponder = [self _firstResponderToSelector:sel];
+    id firstResponder = (_firstResponder) ? : [self _firstResponderToSelector:sel];
     if (firstResponder) {
         return [firstResponder methodSignatureForSelector:sel];
     }
@@ -96,12 +111,16 @@
 - (id)_firstConformedToProtocol:(Protocol *)protocol
 {
     __block id firstConformed = nil;
-    [[self.mutableDelegates allObjects] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+    
+    NSArray *delegates = [_mutableDelegates allObjects];
+    
+    [delegates enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         if ([obj conformsToProtocol:protocol]) {
             firstConformed = obj;
             *stop = YES;
         }
     }];
+    
     return firstConformed;
 }
 
